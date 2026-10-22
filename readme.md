@@ -3,6 +3,8 @@
 在台灣，如果不買車、每天搭計程車上下班，要花多少錢？跟買車相比哪個划算？
 本工具以互動圖表即時比較兩者的累積成本。
 
+👉 **線上版：<https://t1ina2003.github.io/261022_Car_calculator/>**
+
 ## 功能
 
 - **累積成本折線圖**：逐月比較買車與計程車的累積花費，找出交叉點
@@ -27,7 +29,13 @@
 
 ## 使用方式
 
-直接以瀏覽器開啟 `index.html` 即可，無需安裝。
+- 線上：開啟上方 GitHub Pages 連結
+- 本機：直接以瀏覽器開啟 `index.html` 即可，無需安裝
+
+## 部署
+
+推送到 `main` 分支後，[`.github/workflows/pages.yml`](.github/workflows/pages.yml) 會自動部署到 GitHub Pages。
+首次使用需在 **Settings → Pages → Build and deployment → Source** 選擇 **GitHub Actions**。
 
 ## 技術
 
