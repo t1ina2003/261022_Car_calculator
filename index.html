@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>買車 vs 搭計程車通勤｜台灣上下班成本計算器</title>
+  <meta name="description" content="在台灣買車通勤，還是每天搭計程車上下班比較划算？輸入通勤距離、車價、油價、停車費，立即用圖表比較累積成本與損益平衡點。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <header class="hero">
+    <span class="badge">🇹🇼 台灣通勤成本試算</span>
+    <h1>買車 <span class="vs">vs</span> 天天搭計程車</h1>
+    <p class="subtitle">上下班到底哪個比較省？調整參數，圖表即時告訴你答案。</p>
+  </header>
+
+  <main class="layout">
+    <!-- 參數輸入區 -->
+    <section class="panel inputs" aria-labelledby="inputs-title">
+      <h2 id="inputs-title">⚙️ 試算參數</h2>
+
+      <fieldset>
+        <legend>🧭 通勤條件</legend>
+        <label>單程通勤距離 <output id="out-distance"></output>
+          <input type="range" id="distance" min="1" max="40" step="0.5" value="10" />
+        </label>
+        <label>每年上班天數 <output id="out-workdays"></output>
+          <input type="range" id="workdays" min="150" max="300" step="1" value="248" />
+        </label>
+        <label>比較年數 <output id="out-years"></output>
+          <input type="range" id="years" min="1" max="15" step="1" value="10" />
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>🚕 計程車（台北費率）</legend>
+        <div class="grid-2">
+          <label>起跳價 (元)<input type="number" id="taxiBase" value="85" min="0" /></label>
+          <label>起跳距離 (km)<input type="number" id="taxiBaseKm" value="1.25" step="0.05" min="0" /></label>
+          <label>每 200m 跳 (元)<input type="number" id="taxiPer200" value="5" min="0" /></label>
+          <label>每趟塞車延滯 (分)<input type="number" id="taxiWait" value="5" min="0" /></label>
+        </div>
+        <p class="hint">延滯計費：每 60 秒 5 元。</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>🚗 買車成本</legend>
+        <div class="grid-2">
+          <label>車價 (元)<input type="number" id="carPrice" value="800000" step="10000" min="0" /></label>
+          <label>年折舊率 (%)<input type="number" id="depRate" value="12" step="1" min="0" max="50" /></label>
+          <label>排氣量
+            <select id="cc">
+              <option value="1200">1200cc 以下</option>
+              <option value="1800" selected>1201–1800cc</option>
+              <option value="2400">1801–2400cc</option>
+              <option value="3000">2401–3000cc</option>
+            </select>
+          </label>
+          <label>油耗 (km/L)<input type="number" id="kmpl" value="14" step="0.5" min="1" /></label>
+          <label>95 油價 (元/L)<input type="number" id="fuelPrice" value="30.5" step="0.1" min="0" /></label>
+          <label>保險 (元/年)<input type="number" id="insurance" value="18000" step="1000" min="0" /></label>
+          <label>保養維修 (元/年)<input type="number" id="maintenance" value="12000" step="1000" min="0" /></label>
+          <label>住家車位 (元/月)<input type="number" id="parkHome" value="4000" step="500" min="0" /></label>
+          <label>公司停車 (元/月)<input type="number" id="parkWork" value="3000" step="500" min="0" /></label>
+          <label>其他雜支 (元/年)<input type="number" id="misc" value="3000" step="500" min="0" /></label>
+        </div>
+        <p class="hint">牌照稅、燃料費依排氣量自動帶入（自用小客車）。</p>
+      </fieldset>
+
+      <div class="toggle-row" role="radiogroup" aria-label="計算方式">
+        <button type="button" class="toggle active" id="mode-dep" data-mode="dep">折舊成本（期末賣車）</button>
+        <button type="button" class="toggle" id="mode-cash" data-mode="cash">現金支出（不賣車）</button>
+      </div>
+    </section>
+
+    <!-- 結果區 -->
+    <section class="results" aria-labelledby="results-title">
+      <h2 id="results-title" class="sr-only">試算結果</h2>
+
+      <div class="verdict panel" id="verdict"></div>
+
+      <div class="kpis">
+        <article class="kpi panel taxi">
+          <span class="kpi-label">🚕 計程車／天</span>
+          <strong class="kpi-value" id="kpi-taxi-day">-</strong>
+          <span class="kpi-sub" id="kpi-taxi-trip">-</span>
+        </article>
+        <article class="kpi panel car">
+          <span class="kpi-label">🚗 買車／天</span>
+          <strong class="kpi-value" id="kpi-car-day">-</strong>
+          <span class="kpi-sub" id="kpi-car-year">-</span>
+        </article>
+        <article class="kpi panel diff">
+          <span class="kpi-label">💰 總差額</span>
+          <strong class="kpi-value" id="kpi-diff">-</strong>
+          <span class="kpi-sub" id="kpi-diff-sub">-</span>
+        </article>
+        <article class="kpi panel even">
+          <span class="kpi-label">⚖️ 損益平衡距離</span>
+          <strong class="kpi-value" id="kpi-even">-</strong>
+          <span class="kpi-sub">單程超過此距離，買車較划算</span>
+        </article>
+      </div>
+
+      <div class="panel chart-card">
+        <h3>📈 累積成本比較</h3>
+        <div class="chart-wrap"><canvas id="cumChart" aria-label="累積成本折線圖"></canvas></div>
+      </div>
+
+      <div class="chart-row">
+        <div class="panel chart-card">
+          <h3>📊 年均成本結構</h3>
+          <div class="chart-wrap small"><canvas id="breakChart" aria-label="年度成本結構長條圖"></canvas></div>
+        </div>
+        <div class="panel chart-card">
+          <h3>📏 不同通勤距離的年均成本</h3>
+          <div class="chart-wrap small"><canvas id="distChart" aria-label="距離敏感度折線圖"></canvas></div>
+        </div>
+      </div>
+
+      <p class="footnote">
+        ※ 本試算僅供參考。計程車以台北市費率估算（不含夜間加成、叫車費）；買車未計入貸款利息、過路費、罰單及假日用車的額外價值。
+      </p>
+    </section>
+  </main>
+</body>
+</html>
