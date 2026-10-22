@@ -1,0 +1,44 @@
+# 推送到 main 時自動部署靜態網站到 GitHub Pages
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時只允許一個部署，避免互相覆蓋
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 取得原始碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 整理要發佈的檔案
+        run: |
+          mkdir _site
+          cp index.html style.css app.js .nojekyll _site/
+
+      - name: 上傳 Pages 產物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
